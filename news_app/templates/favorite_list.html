@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}お気に入り一覧{% endblock %}
+
+{% block header %}
+    <h1>お気に入り一覧</h1>
+{% endblock %}
+
+{% block content %}
+
+    <!-- お気に入り記事の表示 -->
+
+    {% comment %} 登録されていない場合 {% endcomment %}
+
+    {% if object_list|length == 0 %}
+        <p>お気に入りに登録されている記事はありません。</p>
+    {% endif %}
+
+    {% comment %} １つでもある場合 {% endcomment %}
+    {% for article in object_list %}
+        <!-- article.0　記事のタイトル
+            article.1　公表された日
+            article.2　タグ名
+            article.3　URL
+            article.4　サムネイル画像-->
+        <div class="article-box">
+            <img class="article-thumbnail" src="{{ article.article_img_url }}" alt="サムネイル">
+
+            <div class="article-text">
+                <div class="article-title">タイトル：{{ article.article_title }}</div>
+                <div class="article-meta">記事公開日時：{{ article.published_at }}</div>
+                <div>メモ：{{ article.memo }}</div>
+                <div>作成日時：{{ article.created_at }} | 更新日時：{{article.updated_at}}</div>
+                <a class="btn" href="{{ article.article_url }}" target="_blank">記事を読む</a>
+                <a class="btn" href="{% url 'news_app:update_favorite' article.pk %}">編集する</a>
+            </div>
+        </div>
+    {% endfor %}
+
+    <!-- ページネーション -->
+    <div class="pagination">
+        <span>
+            {% if page_obj.has_previous %}
+                <a href="?page=1">最初</a>
+                <a href="?page={{ page_obj.previous_page_number }}">前</a>
+            {% endif %}
+
+            <span>ページ {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">次</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">最後</a>
+            {% endif %}
+        </span>
+    </div>
+{% endblock %}

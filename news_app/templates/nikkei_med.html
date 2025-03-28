@@ -4,10 +4,6 @@
 
 {% block title %}日経メディカルのニュース{% endblock %}
 
-{% block head %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-{% endblock %}
-
 {% block header %}
     <h1>日経メディカルのニュース</h1>
 {% endblock %}
@@ -27,7 +23,10 @@
             <div class="article-text">
                 <div class="article-title">{{ article.0 }}</div>
                 <div class="article-meta">{{ article.1 }} | タグ名：{{ article.2 }}</div>
-                <a class="article-link" href="{{ article.3 }}" target="_blank">記事を読む</a>
+                <a class="btn" href="{{ article.3 }}" target="_blank">記事を読む</a>
+                <a class="btn" href="{% url 'news_app:add_favorite' %}?article_title={{ article.0|urlencode }}&published_at={{ article.1|urlencode }}&article_url={{ article.3|urlencode }}&article_img_url={{ article.4|urlencode }}">
+                    お気に入りに登録
+                </a>
             </div>
         </div>
     {% endfor %}
