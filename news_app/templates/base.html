@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}{% endblock %}</title>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+    <nav>
+        <ul>
+            <li><a href="{% url 'news_app:index' %}">トップページ</a></li>
+            {% if user.is_authenticated %}
+            <li><a href="{% url 'account_logout' %}">ログアウト</a></li>
+            {% else %}
+            <li><a href="{% url 'account_signup' %}">サインアップ</a></li>
+            <li><a href="{% url 'account_login' %}">ログイン</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    {% block header %}{% endblock %}
+
+    {% block content %}{% endblock %}
+
+</body>
+
+</html>

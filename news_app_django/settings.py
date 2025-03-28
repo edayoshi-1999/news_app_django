@@ -44,6 +44,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
 
     "news_app.apps.NewsAppConfig",
+    "accounts.apps.AccountsConfig",
+
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
 ]
 
 MIDDLEWARE = [
@@ -54,6 +59,8 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "news_app_django.urls"
@@ -126,7 +133,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -173,3 +180,31 @@ LOGGING = {
         },
     },
 }
+
+# ユーザーモデルの設定
+AUTH_USER_MODEL = "accounts.CustomUser"
+
+# django-allauthの設定
+SITE_ID = 1
+
+# 認証バックエンドの設定（Django + Allauth）
+AUTHENTICATION_BACKENDS = [
+    # Djangoのデフォルト認証バックエンド
+    'django.contrib.auth.backends.ModelBackend',
+
+    # allauthの認証バックエンド
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+# allauthの設定（ユーザー名 + パスワードのみで認証するためのもの）
+ACCOUNT_LOGIN_METHODS = {"username"}     # ユーザー名でログイン
+ACCOUNT_SIGNUP_FIELDS = ['username*', 'password1*', 'password2*']  # ユーザー名とパスワードのみでサインアップ
+ACCOUNT_EMAIL_VERIFICATION = "none"            # メール認証なし
+ACCOUNT_LOGIN_ON_SIGNUP = True                 # サインアップ後に即ログイン
+LOGIN_REDIRECT_URL = "news_app:index"              # ログイン後のリダイレクト先
+ACCOUNT_LOGOUT_REDIRECT_URL = "news_app:index"      # ログアウト後のリダイレクト先
+
+# staticファイル読み込み
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "static"),
+)
