@@ -3,10 +3,6 @@
 
 {% block title %}お気に入り一覧{% endblock %}
 
-{% block head %}
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-{% endblock %}
-
 {% block header %}
     <h1>お気に入り一覧</h1>
 {% endblock %}
@@ -36,8 +32,8 @@
                 <div class="article-meta">記事公開日時：{{ article.published_at }}</div>
                 <div>メモ：{{ article.memo }}</div>
                 <div>作成日時：{{ article.created_at }} | 更新日時：{{article.updated_at}}</div>
-                <a class="article-link" href="{{ article.article_url }}" target="_blank">記事を読む</a>
-
+                <a class="btn" href="{{ article.article_url }}" target="_blank">記事を読む</a>
+                <a class="btn" href="{% url 'news_app:update_favorite' article.pk %}">編集する</a>
             </div>
         </div>
     {% endfor %}
