@@ -1,0 +1,47 @@
+/* ニュース記事全体の枠 */
+.article-box {
+    display: flex;
+    margin-bottom: 20px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fafafa;
+}
+
+/* タイトル */
+.article-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+/* 情報欄（日付・タグ） */
+.article-meta {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+/* リンクボタン風 */
+.article-link {
+    color: #007BFF;
+    text-decoration: none;
+}
+
+.article-link:hover {
+    text-decoration: underline;
+}
+
+/* サムネイル画像 */
+.article-thumbnail {
+    width: 120px;
+    height: auto;
+    margin-right: 15px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+/* テキスト部分のラッパー */
+.article-text {
+    flex: 1; /* 残り幅全部 */
+}

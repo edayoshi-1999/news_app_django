@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load account %}
+
+{% block title %}ログアウト{% endblock %}
+
+{% block content %}
+  <h2>ログアウト</h2>
+
+  <p>ユーザー {{ user.username }} としてログインしました。</p>
+
+  <h3>メニュー：</h3>
+  <ul>
+      {# メールアドレス変更リンクは削除済み #}
+      <li><a href="{% url 'account_change_password' %}">パスワード変更</a></li>
+      <li><a href="{% url 'account_logout' %}">ログアウト</a></li>
+  </ul>
+
+  <p>ログアウトしますか？</p>
+
+  <form method="post" action="{% url 'account_logout' %}">
+      {% csrf_token %}
+      <button type="submit">ログアウト</button>
+  </form>
+{% endblock %}
