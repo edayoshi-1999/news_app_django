@@ -16,11 +16,11 @@ class IndexView(generic.TemplateView):
     template_name = "index.html"
 
 # 国際ニュースのビュー
-class ForeignNewsView(generic.TemplateView):
+class ForeignNewsView(LoginRequiredMixin, generic.TemplateView):
     template_name = "foreign_news.html"
 
 # 日経メディカルのビュー
-class NikkeiMedView(generic.TemplateView):
+class NikkeiMedView(LoginRequiredMixin, generic.TemplateView):
     template_name = "nikkei_med.html"
 
     # テンプレートに記事情報を渡す
