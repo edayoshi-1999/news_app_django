@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from django.contrib import messages
 
 # 環境変数ファイルの読み込み
 load_dotenv()
@@ -208,3 +209,11 @@ ACCOUNT_LOGOUT_REDIRECT_URL = "news_app:index"      # ログアウト後のリ�
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static"),
 )
+
+# メッセージタグの設定
+MESSAGE_TAGS = {
+    messages.ERROR: "my-error",
+    messages.WARNING: "my-warning",
+    messages.SUCCESS: "my-success",
+    messages.INFO: "my-info",
+}

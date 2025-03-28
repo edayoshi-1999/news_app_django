@@ -12,15 +12,30 @@
         <ul>
             <li><a href="{% url 'news_app:index' %}">トップページ</a></li>
             {% if user.is_authenticated %}
-            <li><a href="{% url 'account_logout' %}">ログアウト</a></li>
+                {% comment %} ログインしている場合 {% endcomment %}
+                <p></p>
+                <li>ユーザー名：{{ user.username }}</li>
+                <li><a href="{% url 'account_logout' %}">ログアウト</a></li>
+                <li><a href="{% url 'news_app:favorite_list' %}">お気に入り一覧</a></li>
             {% else %}
-            <li><a href="{% url 'account_signup' %}">サインアップ</a></li>
-            <li><a href="{% url 'account_login' %}">ログイン</a></li>
+                {% comment %} ログインしていない場合 {% endcomment %}
+                <li><a href="{% url 'account_signup' %}">サインアップ</a></li>
+                <li><a href="{% url 'account_login' %}">ログイン</a></li>
             {% endif %}
         </ul>
     </nav>
 
     {% block header %}{% endblock %}
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %} 
 
     {% block content %}{% endblock %}
 
