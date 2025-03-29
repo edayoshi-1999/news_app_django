@@ -58,34 +58,6 @@ def parse_articles(html):
 
             articles.append(article)
 
-
-
-        # titles = soup.find_all('p', class_='articleTextList__title')
-        # dates = soup.find_all('span', class_='articleTextList__date')
-        # lis = soup.find_all('li', class_='articleTextList__item')
-        # ps = soup.find_all('p', class_='articleTextList__sub')
-        
-        # # liタグの1個下の子要素であるaタグを取得し、リストにする。
-        # urls = []
-        # for li in lis:
-        #     urls.append(li.find('a', recursive=False))
-
-        # # pタグの1個下の子要素であるimgタグを取得し、リストにする。
-        # img_urls = []
-        # for p in ps:
-        #     img_urls.append(p.find('img', recursive=False))
-
-        # # 取得したデータをリストに格納
-        # articles = []
-        # for title, date, url, img_url in zip(titles, dates, urls, img_urls):
-        #     article = [
-        #         title.text,
-        #         date.text,
-        #         BASE_URL + url.attrs["href"],
-        #         BASE_URL + img_url.attrs["src"]
-        #     ]
-        #     articles.append(article)
-
         return articles
 
     except Exception as e:

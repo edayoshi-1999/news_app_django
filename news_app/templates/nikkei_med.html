@@ -18,7 +18,12 @@
             article.3　URL
             article.4　サムネイル画像-->
         <div class="article-box">
-            <img class="article-thumbnail" src="{{ article.4 }}" alt="サムネイル">
+
+            {% if article.4 %}
+                <img class="article-thumbnail" src="{{ article.4 }}" alt="サムネイル">
+            {% else %}
+                <p class="article-thumbnail">（画像なし）</p>
+            {% endif %}
 
             <div class="article-text">
                 <div class="article-title">{{ article.0 }}</div>

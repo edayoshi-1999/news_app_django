@@ -3,13 +3,15 @@ from django.views import generic
 from django.core.paginator import Paginator
 from .services.scrapingNikkeiMed import scraping_NikkeiMed
 from .services.scrapingZiziMed import scraping_ZiziMed
+from .services.newsAPI import fetch_news_from_api
+from .services.utils import parse_date, convert_utc_to_jst
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import Article
 from .forms import AddFavoriteForm
 from django.urls import reverse_lazy
 import logging
 from django.contrib import messages
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from django.shortcuts import get_object_or_404
 
 
@@ -33,7 +35,38 @@ class IndexView(generic.TemplateView):
 # 国際ニュースのビュー
 class ForeignNewsView(LoginRequiredMixin, generic.TemplateView):
     template_name = "foreign_news.html"
+
+    # テンプレートに記事情報を渡す
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # 初回だけAPI取得（セッションに保存）
+        # シングルページアプリケーションのように、毎回APIを叩くのではなく、
+        # セッションに保存しておくことで、ページ遷移時にAPIを叩かないようにする。
+        if "foreign_news_data" not in self.request.session:
+            # APIから記事情報を取得
+            article_list = fetch_news_from_api()
+
+            # published_at(=article_listの2番目の要素=article[1])を日本時間に変換
+            for article in article_list:
+                article[1] = convert_utc_to_jst(article[1])
+
+            # セッションに保存
+            self.request.session["foreign_news_data"] = article_list
+        else:
+            article_list = self.request.session["foreign_news_data"]
+
+        # ページネーション処理（1ページに10記事）
+        paginator = Paginator(article_list, 10)
+        page_number = self.request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        # テンプレートに渡す
+        context["page_obj"] = page_obj
+
+        return context
     
+
 
 # 日経メディカルのビュー
 class NikkeiMedView(LoginRequiredMixin, generic.TemplateView):
@@ -42,7 +75,6 @@ class NikkeiMedView(LoginRequiredMixin, generic.TemplateView):
     # テンプレートに記事情報を渡す
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # context['articles'] = scraping_NikkeiMed()
 
         # 記事一覧を取得
         article_list = scraping_NikkeiMed()
@@ -105,7 +137,7 @@ class AddFavoriteView(LoginRequiredMixin, generic.FormView):
     def get_initial(self):
 
         # published_at の初期値を取得し、datetime型に変換する。
-        published_at = self.parse_date(self.request.GET.get('published_at'))
+        published_at = parse_date(self.request.GET.get('published_at'))
 
         return {
             'article_title': self.request.GET.get('article_title'),
@@ -114,27 +146,6 @@ class AddFavoriteView(LoginRequiredMixin, generic.FormView):
             'published_at': published_at,
         }  
     
-
-    # 日付または日付＋時刻の文字列を `datetime.date` に変換する。
-    # 例：
-    #     - "2025/03/29"  (日経メディカルの形式)
-    #     - "2025/03/29 12:00" (時事メディカルの形式)　
-    def parse_date(self, raw_date):
-        if not raw_date:
-            return None
-
-        date_formats = ["%Y/%m/%d %H:%M", "%Y/%m/%d"]  # 時刻あり → なし の順に試す
-
-        for fmt in date_formats:
-            try:
-                return datetime.strptime(raw_date, fmt).date()
-            except ValueError:
-                continue  # 次のフォーマットで試す
-
-        logger.error(f"日付のパースに失敗しました（入力: '{raw_date}'）")
-        return None
-
-
     # バリデーションを通った場合の処理
     def form_valid(self, form):
         article = form.save(commit=False)
