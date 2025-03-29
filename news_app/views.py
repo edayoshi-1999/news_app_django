@@ -9,6 +9,8 @@ from django.urls import reverse_lazy
 import logging
 from django.contrib import messages
 from datetime import datetime
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect
 
 logger = logging.getLogger(__name__)
 
@@ -75,7 +77,7 @@ class AddFavoriteView(LoginRequiredMixin, generic.FormView):
     # フォームに初期値をセット
     def get_initial(self):
 
-        # published_atの初期値を取得し、変換
+        # published_atの初期値を取得し、適切な形へ変換。エラーを回避するため。
         # 例: 2023/10/01　→　2023-10-01 に変換
         raw_date = self.request.GET.get('published_at')
         published_date = None
@@ -83,8 +85,8 @@ class AddFavoriteView(LoginRequiredMixin, generic.FormView):
         if raw_date:
             try:
                 published_date = datetime.strptime(raw_date, "%Y/%m/%d").date()
-            except ValueError:
-                pass
+            except ValueError as e:
+                logger.error(f"日付のパースに失敗しました（入力: '{raw_date}'）: {e}")
 
         return {
             'article_title': self.request.GET.get('article_title'),
@@ -104,6 +106,7 @@ class UpdateFavoriteView(LoginRequiredMixin, generic.UpdateView):
     # バリデーションを通った場合の処理
     def form_valid(self, form):
         messages.success(self.request, "お気に入り記事を更新しました")
+        logger.info("★ form_valid updateが() 呼ばれた！")
         return super().form_valid(form)
     
     # バリデーションを通らなかった場合の処理
@@ -111,3 +114,20 @@ class UpdateFavoriteView(LoginRequiredMixin, generic.UpdateView):
         messages.error(self.request, "お気に入り記事の更新に失敗しました")
         return super().form_invalid(form)
 
+# お気に入り記事削除のビュー
+class DeleteFavoriteView(LoginRequiredMixin, generic.DeleteView):
+    model = Article
+    template_name = "delete_favorite.html"
+    success_url = reverse_lazy("news_app:favorite_list")
+
+    # messageを表示するために、postメソッドをオーバーライドしてdeleteメソッドを呼び出す
+    # これをしないと、deleteメソッドが呼ばれない。理由は不明。
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        logger.info(f"★ post() 手動で delete() 呼びます）")
+        return self.delete(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        logger.info("★ delete() 呼ばれた！")
+        messages.success(self.request, "お気に入り記事を削除しました")
+        return super().delete(request, *args, **kwargs)

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}お気に入りを削除{% endblock %}
+
+{% block header %}
+    <h1>このお気に入り記事を削除しますか？</h1>
+{% endblock %}
+
+{% block content %}
+
+{% comment %} バリデーションエラーの表示
+{% if form.errors %}
+    <div style="color: red; font-weight: bold;">
+        <ul>
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <li>{{ field.label }}：{{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %} {% endcomment %}
+
+{% comment %} <form method="post"> {% endcomment %}
+<form method="post" action="{% url 'news_app:delete_favorite' object.pk %}">
+    {% csrf_token %}
+    <p>本当に削除しますか?</p>
+    <button type="submit" class="btn">削除する</button>
+    <a href="javascript:history.back()" class="btn">戻る</a>
+</form>
+{% endblock %}

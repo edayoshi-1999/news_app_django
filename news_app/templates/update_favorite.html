@@ -52,6 +52,7 @@
     </p>
 
     <button type="submit" class="btn">更新する</button>
+    <a href="{% url 'news_app:delete_favorite' form.instance.pk %}" class="btn">削除する</a>
     <a href="javascript:history.back()" class="btn">戻る</a>
 </form>
 {% endblock %}
