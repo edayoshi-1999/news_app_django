@@ -7,7 +7,47 @@
 {% endblock %}
 
 {% block content %}
-    <ul>
-        <p>a</p>
-    </ul>
+    <!-- ニュース記事の表示 -->
+    {% for article in page_obj %}
+        <!-- article.0　記事のタイトル
+            article.1　公表された日
+            article.2　ソース
+            article.3　URL
+            article.4　サムネイル画像-->
+        <div class="article-box">
+
+            {% if article.4 %}
+                <img class="article-thumbnail" src="{{ article.4 }}" alt="サムネイル">
+            {% else %}
+                <p class="article-thumbnail">（画像なし）</p>
+            {% endif %}
+
+            <div class="article-text">
+                <div class="article-title">{{ article.0 }}</div>
+                <div class="article-meta">{{ article.1 }} | ソース：{{ article.2 }}</div>
+                <a class="btn" href="{{ article.3 }}" target="_blank">記事を読む</a>
+                <a class="btn" href="{% url 'news_app:add_favorite' %}?article_title={{ article.0|urlencode }}&published_at={{ article.1|urlencode }}&article_url={{ article.3|urlencode }}&article_img_url={{ article.4|urlencode }}">
+                    お気に入りに登録
+                </a>
+            </div>
+        </div>
+    {% endfor %}
+
+    <!-- ページネーション -->
+    <div class="pagination">
+        <span>
+            {% if page_obj.has_previous %}
+                <a href="?page=1">最初</a>
+                <a href="?page={{ page_obj.previous_page_number }}">前</a>
+            {% endif %}
+    
+            <span>ページ {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">次</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">最後</a>
+            {% endif %}
+        </span>
+    </div>
+
 {% endblock %}

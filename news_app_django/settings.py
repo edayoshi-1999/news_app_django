@@ -217,3 +217,6 @@ MESSAGE_TAGS = {
     messages.SUCCESS: "my-success",
     messages.INFO: "my-info",
 }
+
+# メッセージをセッションに保存するためのストレージを指定
+MESSAGE_STORAGE = 'django.contrib.messages.storage.session.SessionStorage'

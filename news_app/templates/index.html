@@ -14,6 +14,7 @@
         {% if user.is_authenticated %}
         <li><a href="{% url 'news_app:foreign_news' %}">英語圏の医療ニュース</a></li>
         <li><a href="{% url 'news_app:nikkei_med' %}">日経メディカルのニュース</a></li>
+        <li><a href="{% url 'news_app:zizi_med' %}">時事メディカルのニュース</a></li>
         <li><a href="{% url 'news_app:favorite_list' %}">お気に入り一覧</a></li>
         {% endif %}
 
