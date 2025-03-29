@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views import generic
 from django.core.paginator import Paginator
 from .services.scrapingNikkeiMed import scraping_NikkeiMed
+from .services.scrapingZiziMed import scraping_ZiziMed
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import Article
 from .forms import AddFavoriteForm
@@ -32,6 +33,7 @@ class IndexView(generic.TemplateView):
 # 国際ニュースのビュー
 class ForeignNewsView(LoginRequiredMixin, generic.TemplateView):
     template_name = "foreign_news.html"
+    
 
 # 日経メディカルのビュー
 class NikkeiMedView(LoginRequiredMixin, generic.TemplateView):
@@ -44,6 +46,27 @@ class NikkeiMedView(LoginRequiredMixin, generic.TemplateView):
 
         # 記事一覧を取得
         article_list = scraping_NikkeiMed()
+
+        # ページネーション処理（1ページに10記事）
+        paginator = Paginator(article_list, 10)
+        page_number = self.request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        # テンプレートに渡す
+        context["page_obj"] = page_obj
+
+        return context
+
+# 時事メディカルのビュー
+class ZiziMedView(LoginRequiredMixin, generic.TemplateView):
+    template_name = "Zizi_med.html"
+
+    # テンプレートに記事情報を渡す
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # 記事一覧を取得
+        article_list = scraping_ZiziMed()
 
         # ページネーション処理（1ページに10記事）
         paginator = Paginator(article_list, 10)
@@ -81,23 +104,36 @@ class AddFavoriteView(LoginRequiredMixin, generic.FormView):
     # フォームに初期値をセット
     def get_initial(self):
 
-        # published_atの初期値を取得し、適切な形へ変換。エラーを回避するため。
-        # 例: 2023/10/01　→　2023-10-01 に変換
-        raw_date = self.request.GET.get('published_at')
-        published_date = None
-
-        if raw_date:
-            try:
-                published_date = datetime.strptime(raw_date, "%Y/%m/%d").date()
-            except ValueError as e:
-                logger.error(f"日付のパースに失敗しました（入力: '{raw_date}'）: {e}")
+        # published_at の初期値を取得し、datetime型に変換する。
+        published_at = self.parse_date(self.request.GET.get('published_at'))
 
         return {
             'article_title': self.request.GET.get('article_title'),
             'article_url': self.request.GET.get('article_url'),
             'article_img_url': self.request.GET.get('article_img_url'),
-            'published_at': published_date,
-        }
+            'published_at': published_at,
+        }  
+    
+
+    # 日付または日付＋時刻の文字列を `datetime.date` に変換する。
+    # 例：
+    #     - "2025/03/29"  (日経メディカルの形式)
+    #     - "2025/03/29 12:00" (時事メディカルの形式)　
+    def parse_date(self, raw_date):
+        if not raw_date:
+            return None
+
+        date_formats = ["%Y/%m/%d %H:%M", "%Y/%m/%d"]  # 時刻あり → なし の順に試す
+
+        for fmt in date_formats:
+            try:
+                return datetime.strptime(raw_date, fmt).date()
+            except ValueError:
+                continue  # 次のフォーマットで試す
+
+        logger.error(f"日付のパースに失敗しました（入力: '{raw_date}'）")
+        return None
+
 
     # バリデーションを通った場合の処理
     def form_valid(self, form):

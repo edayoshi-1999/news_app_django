@@ -20,7 +20,12 @@
     {% comment %} １つでもある場合 {% endcomment %}
     {% for article in object_list %}
         <div class="article-box">
-            <img class="article-thumbnail" src="{{ article.article_img_url }}" alt="サムネイル">
+            {% if article.article_img_url %}
+                <img class="article-thumbnail" src="{{ article.article_img_url }}" alt="サムネイル">
+            {% else %}
+                <p class="article-thumbnail">（画像なし）</p>
+            {% endif %}
+            {% comment %} <img class="article-thumbnail" src="{{ article.article_img_url }}" alt="サムネイル"> {% endcomment %}
 
             <div class="article-text">
                 <div class="article-title">タイトル：{{ article.article_title }}</div>

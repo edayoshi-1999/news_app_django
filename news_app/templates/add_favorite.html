@@ -41,7 +41,12 @@
     </p>
     <p>
         <label>記事画像：</label><br>
-        <img class="article-thumbnail" src="{{ form.initial.article_img_url }}" alt="サムネイル">
+        {% if form.initial.article_img_url %}
+            <img src="{{ form.initial.article_img_url }}" alt="サムネイル">
+        {% else %}
+            <p>（画像なし）</p>
+        {% endif %}
+        
         {{ form.article_img_url.as_hidden }}
     </p>
     <p>
