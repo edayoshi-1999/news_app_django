@@ -20,7 +20,7 @@ class TestFetchHtml(unittest.TestCase):
         html = fetch_html('https://dummyurl.com')
         self.assertEqual(html, '<html><body>test</body></html>')
 
-    # 例外処理：（例外発生時にNoneを返すか）
+    # 異常系：（例外発生時にNoneを返すか）
     @patch('news_app.services.scrapingZiziMed.requests.get')
     def test_fetch_html_exception(self, mock_get):
         # リクエストで例外が発生するように設定
@@ -61,12 +61,12 @@ class TestParseArticles(unittest.TestCase):
         result = parse_articles(sample_html)
         self.assertEqual(result, expected)
 
-    # 分岐処理：htmlがNoneのとき空リストを返すか
+    # 異常系：htmlがNoneのとき空リストを返すか
     def test_parse_articles_with_none(self):
         result = parse_articles(None)
         self.assertEqual(result, [])
     
-    # 例外処理: HTMLの解析中に例外が発生したときに空リストを返すか
+    # 異常系: HTMLの解析中に例外が発生したときに空リストを返すか
     def test_parse_articles_exception(self):
         result = parse_articles('invalid html')
         self.assertEqual(result, [])

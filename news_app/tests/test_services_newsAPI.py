@@ -35,7 +35,7 @@ class TestFetchNewsData(unittest.TestCase):
         # 正しくデータが取得されているか確認
         self.assertEqual(articles[0]['title'], 'Test')
 
-    # 例外処理：RequestException発生時に空リストを返すか
+    # 異常系：RequestException発生時に空リストを返すか
     @patch('news_app.services.newsAPI.requests.get')
     @patch('news_app.services.newsAPI.os.getenv')
     def test_fetch_news_data_request_exception(self, mock_getenv, mock_get):
@@ -45,7 +45,7 @@ class TestFetchNewsData(unittest.TestCase):
         result = fetch_news_data()
         self.assertEqual(result, [])  # 空リストが返ることを確認
 
-    # 例外処理：ValueError（JSONデコード失敗）時に空リストを返すか
+    # 異常系：ValueError（JSONデコード失敗）時に空リストを返すか
     @patch('news_app.services.newsAPI.requests.get')
     @patch('news_app.services.newsAPI.os.getenv')
     def test_fetch_news_data_json_decode_error(self, mock_getenv, mock_get):
@@ -81,21 +81,21 @@ class TestCleanAndFormatData(unittest.TestCase):
         self.assertEqual(df.loc[2, 'source'], '')  # sourceがNoneの場合も空文字に変換されるか
         self.assertEqual(df.loc[3, 'source'], '')  # sourceが{}のときも空文字に変換されるか
 
-    # 分岐処理：テストデータが空の場合、空のDataFrameを返すか
+    # 異常系：テストデータが空の場合、空のDataFrameを返すか
     def test_clean_and_format_data_with_empty_list(self):
         result = clean_and_format_data([])
 
         self.assertIsInstance(result, pd.DataFrame)
         self.assertTrue(result.empty)
 
-    # 分岐処理：テストデータがNoneの場合、空のDataFrameを返すか
+    # 異常系：テストデータがNoneの場合、空のDataFrameを返すか
     def test_clean_and_format_data_with_none(self):
         result = clean_and_format_data(None)
 
         self.assertIsInstance(result, pd.DataFrame)
         self.assertTrue(result.empty)
     
-    # 例外処理：データ整形中に例外が発生した場合、空のDataFrameを返すか
+    # 異常系：データ整形中に例外が発生した場合、空のDataFrameを返すか
     def test_clean_and_format_data_with_exception(self):
         # 非イテラブルなオブジェクトを渡して DataFrame 化で失敗させる
         invalid_input = object()  # DataFrame に変換できない型
@@ -118,7 +118,7 @@ class TestTranslateTitles(unittest.TestCase):
         self.assertEqual(result_df.loc[0, 'title'], 'Translated Title 1')
         self.assertEqual(result_df.loc[1, 'title'], 'Translated Title 2')
 
-    # 分岐処理：'title' カラムが存在しないとき、処理をスキップするか確認
+    # 異常系：'title' カラムが存在しないとき、処理をスキップするか確認
     def test_translate_titles_with_no_title_column(self):
         df = pd.DataFrame({'not_title': ['No title here']})
         result_df = translate_titles(df)
@@ -126,7 +126,7 @@ class TestTranslateTitles(unittest.TestCase):
         # 元のDataFrameがそのまま返ってくる
         self.assertTrue(result_df.equals(df))
     
-    # 例外処理：translate_text() が例外を投げたとき、エラーをキャッチしてクラッシュしないか確認
+    # 異常系：translate_text() が例外を投げたとき、エラーをキャッチしてクラッシュしないか確認
     @patch.object(Translator, 'translate_text', side_effect=Exception("Translation error"))
     def test_translate_titles_with_exception(self, mock_translate_text):
         df = pd.DataFrame({'title': ['Title 1', 'Title 2']})
