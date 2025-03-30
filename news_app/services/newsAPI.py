@@ -67,7 +67,7 @@ def translate_titles(df):
         title_list = df['title'].tolist()        # タイトルをリスト化
         translator = Translator()                # 翻訳クラスのインスタンスを生成
         translated_title = translator.translate_text(title_list)  # タイトルを翻訳
-        df['title'] = pd.DataFrame(translated_title)  # 翻訳後のタイトルをDataFrameに反映
+        df['title'] = translated_title  # 翻訳後のタイトルをDataFrameに反映
         return df
     except Exception as e:
         logger.error(f"[エラー] タイトル翻訳中に問題が発生しました: {e}")
