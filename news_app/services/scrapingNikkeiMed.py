@@ -4,6 +4,11 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import logging
+
+
+
+logger = logging.getLogger(__name__)
 
 
 # 定数：スクレイピング対象URL
@@ -17,13 +22,13 @@ def fetch_html(url):
         response.raise_for_status()
         return response.text
     except requests.exceptions.RequestException as e:
-        print(f"[エラー] HTMLの取得に失敗しました: {e}")
+        logger.error(f"[エラー] HTMLの取得に失敗しました: {e}")
         return None  # 後続処理で None チェックできるようにする
 
 # 記事情報を抽出する関数
 def parse_article_info(html):
     if html is None:
-        print("[警告] HTMLが空です。記事情報の解析をスキップします。")
+        logger.error("[警告] HTMLが空です。記事情報の解析をスキップします。")
         return []
 
     try:
@@ -61,7 +66,7 @@ def parse_article_info(html):
         return articles
 
     except Exception as e:
-        print(f"[エラー] HTMLの解析中に問題が発生しました: {e}")
+        logger.error(f"[エラー] HTMLの解析中に問題が発生しました: {e}")
         return []
 
 
@@ -72,5 +77,5 @@ def scraping_NikkeiMed():
         article_data = parse_article_info(html) # 記事情報を抽出
         return article_data
     except Exception as e:
-        print(f"[エラー] メイン処理中に問題が発生しました: {e}")
+        logger.error(f"[エラー] メイン処理中に問題が発生しました: {e}")
         return []

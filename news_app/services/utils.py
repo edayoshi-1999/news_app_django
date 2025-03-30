@@ -6,11 +6,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# 日付を日本時間に変換する関数
+# 日付をUTCから日本時間に変換する関数
 # 例：2025-03-29T12:00:00Z → 2025/03/29 21:00
 def convert_utc_to_jst(utc_str):
     try:
         dt = datetime.strptime(utc_str, "%Y-%m-%dT%H:%M:%SZ")
+        # UTCから日本時間に変換。日本はUTC+9時間
         dt_japan = dt.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=9)))
         return dt_japan.strftime("%Y/%m/%d %H:%M")
     except Exception:
@@ -23,6 +24,7 @@ def convert_utc_to_jst(utc_str):
 #     - "2025/03/29"  (日経メディカルの形式)
 #     - "2025/03/29 12:00" (時事メディカルの形式)　
 def parse_date(raw_date):
+    # raw_date が None の場合は、None を返す。
     if not raw_date:
         return None
 

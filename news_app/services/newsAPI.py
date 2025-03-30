@@ -3,6 +3,10 @@ import pandas as pd
 from .translateByDeepl import Translator
 import os
 from dotenv import load_dotenv
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 # .env ファイルを読み込む
 load_dotenv()
@@ -30,17 +34,17 @@ def fetch_news_data():
         data = response.json()
         return data['articles']
     except requests.exceptions.RequestException as e:
-        print(f"[エラー] ニュースデータの取得に失敗しました: {e}")
+        logger.error(f"[エラー] ニュースデータの取得に失敗しました: {e}")
         return []
     except ValueError as e:
-        print(f"[エラー] レスポンスデータの解析に失敗しました: {e}")
+        logger.error(f"[エラー] レスポンスデータの解析に失敗しました: {e}")
         return []
 
 
 # APIで取得した記事データを整形する関数
 def clean_and_format_data(articles):
     if not articles:
-        print("[情報] 記事データが空です。整形処理をスキップします。")
+        logger.error("[情報] 記事データが空です。整形処理をスキップします。")
         return pd.DataFrame()
     
     try:
@@ -49,24 +53,24 @@ def clean_and_format_data(articles):
         df['source'] = df['source'].apply(extract_source_name)  # sourceフィールドから名前だけ取り出す
         return df
     except Exception as e:
-        print(f"[エラー] データ整形中に問題が発生しました: {e}")
+        logger.error(f"[エラー] データ整形中に問題が発生しました: {e}")
         return pd.DataFrame()
 
 
 # titleカラムだけを翻訳する関数
 def translate_titles(df):
     if 'title' not in df.columns:
-        print("[情報] タイトルカラムが存在しません。翻訳処理をスキップします。")
+        logger.error("[情報] タイトルカラムが存在しません。翻訳処理をスキップします。")
         return df
     
     try:
         title_list = df['title'].tolist()        # タイトルをリスト化
         translator = Translator()                # 翻訳クラスのインスタンスを生成
         translated_title = translator.translate_text(title_list)  # タイトルを翻訳
-        df['title'] = pd.DataFrame(translated_title)  # 翻訳後のタイトルをDataFrameに反映
+        df['title'] = translated_title  # 翻訳後のタイトルをDataFrameに反映
         return df
     except Exception as e:
-        print(f"[エラー] タイトル翻訳中に問題が発生しました: {e}")
+        logger.error(f"[エラー] タイトル翻訳中に問題が発生しました: {e}")
         return df
 
 
@@ -82,6 +86,6 @@ def fetch_news_from_api():
         df = df.sort_values('publishedAt', ascending=False)  # 新しい順にソート
         return df.values.tolist()  # リスト化して返す
     except Exception as e:
-        print(f"[エラー] メイン処理中に問題が発生しました: {e}")
+        logger.error(f"[エラー] メイン処理中に問題が発生しました: {e}")
         return []
 

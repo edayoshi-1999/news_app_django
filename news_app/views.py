@@ -40,21 +40,8 @@ class ForeignNewsView(LoginRequiredMixin, generic.TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # 初回だけAPI取得（セッションに保存）
-        # シングルページアプリケーションのように、毎回APIを叩くのではなく、
-        # セッションに保存しておくことで、ページ遷移時にAPIを叩かないようにする。
-        if "foreign_news_data" not in self.request.session:
-            # APIから記事情報を取得
-            article_list = fetch_news_from_api()
-
-            # published_at(=article_listの2番目の要素=article[1])を日本時間に変換
-            for article in article_list:
-                article[1] = convert_utc_to_jst(article[1])
-
-            # セッションに保存
-            self.request.session["foreign_news_data"] = article_list
-        else:
-            article_list = self.request.session["foreign_news_data"]
+        # 記事一覧を取得
+        article_list = self.get_foreign_news_data()
 
         # ページネーション処理（1ページに10記事）
         paginator = Paginator(article_list, 10)
@@ -65,6 +52,23 @@ class ForeignNewsView(LoginRequiredMixin, generic.TemplateView):
         context["page_obj"] = page_obj
 
         return context
+    
+
+    # 初回だけAPI取得（セッションに保存）
+    # シングルページアプリケーションのように、毎回APIを叩くのではなく、
+    # セッションに保存しておくことで、ページ遷移時にAPIを叩かないようにする。
+    def get_foreign_news_data(self):
+        # セッションに保存されていない場合はAPIを叩く
+        # セッションに保存されている場合は、セッションから取得する。
+        if "foreign_news_data" not in self.request.session:
+            article_list = fetch_news_from_api()
+            
+            # published_at(=article_listの2番目の要素=article[1])を日本時間に変換
+            for article in article_list:
+                article[1] = convert_utc_to_jst(article[1])
+
+            self.request.session["foreign_news_data"] = article_list
+        return self.request.session["foreign_news_data"]
     
 
 
@@ -91,7 +95,7 @@ class NikkeiMedView(LoginRequiredMixin, generic.TemplateView):
 
 # 時事メディカルのビュー
 class ZiziMedView(LoginRequiredMixin, generic.TemplateView):
-    template_name = "Zizi_med.html"
+    template_name = "zizi_med.html"
 
     # テンプレートに記事情報を渡す
     def get_context_data(self, **kwargs):
@@ -172,7 +176,7 @@ class UpdateFavoriteView(LoginRequiredMixin, OnlyYouMixin, generic.UpdateView):
     # バリデーションを通った場合の処理
     def form_valid(self, form):
         messages.success(self.request, "お気に入り記事を更新しました")
-        logger.info("★ form_valid updateが() 呼ばれた！")
+        # logger.info("★ form_valid updateが() 呼ばれた！")
         return super().form_valid(form)
     
     # バリデーションを通らなかった場合の処理
@@ -190,10 +194,10 @@ class DeleteFavoriteView(LoginRequiredMixin, OnlyYouMixin, generic.DeleteView):
     # これをしないと、deleteメソッドが呼ばれない。理由は不明。
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
-        logger.info(f"★ post() 手動で delete() 呼びます）")
+        # logger.info(f"★ post() 手動で delete() 呼びます）")
         return self.delete(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
-        logger.info("★ delete() 呼ばれた！")
+        # logger.info("★ delete() 呼ばれた！")
         messages.success(self.request, "お気に入り記事を削除しました")
         return super().delete(request, *args, **kwargs)

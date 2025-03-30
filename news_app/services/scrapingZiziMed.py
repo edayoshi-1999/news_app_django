@@ -5,7 +5,9 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import logging
 
+logger = logging.getLogger(__name__)
 
 URL = 'https://medical.jiji.com/news/?c=medical'
 BASE_URL = 'https://medical.jiji.com'
@@ -17,14 +19,14 @@ def fetch_html(url):
         response.raise_for_status()  # HTTPエラーがあれば例外に
         return response.text
     except requests.exceptions.RequestException as e:
-        print(f"[エラー] HTML取得に失敗しました: {e}")
+        logger.error(f"[エラー] HTML取得に失敗しました: {e}")
         return None
 
 
 def parse_articles(html):
     """HTMLから記事情報（タイトル・日付・URL）を抽出する"""
     if html is None:
-        print("[警告] HTMLが空なので、記事の解析をスキップします。")
+        logger.error("[警告] HTMLが空なので、記事の解析をスキップします。")
         return []
 
     try:
@@ -61,7 +63,7 @@ def parse_articles(html):
         return articles
 
     except Exception as e:
-        print(f"[エラー] 記事情報の解析に失敗しました: {e}")
+        logger.error(f"[エラー] 記事情報の解析に失敗しました: {e}")
         return []
 
 
@@ -72,7 +74,7 @@ def scraping_ZiziMed():
         articles = parse_articles(html)
         return articles
     except Exception as e:
-        print(f"[エラー] メイン処理中に問題が発生しました: {e}")
+        logger.error(f"[エラー] メイン処理中に問題が発生しました: {e}")
         return []
 
 
