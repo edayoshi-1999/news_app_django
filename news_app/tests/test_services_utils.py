@@ -12,6 +12,7 @@ class TestConvertUtcToJst(unittest.TestCase):
         utc_str = "2025-03-29T12:00:00Z"
         expected = "2025/03/29 21:00"
         result = convert_utc_to_jst(utc_str)
+        self.assertEqual(result, expected)
 
     # 異常系：フォーマットが違う → 元の文字列をそのまま返す
     def test_convert_utc_to_jst_invalid_format(self):
