@@ -2,6 +2,11 @@ import deepl
 import os
 import pandas as pd
 from dotenv import load_dotenv
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 # .env ファイルを読み込む
 load_dotenv()
@@ -11,11 +16,11 @@ class Translator():
     # 英語のリスト型のデータを日本語に翻訳して、そのリストを返す。
     def translate_text(self, data:list):
         if not isinstance(data, list):
-            print("[警告] 入力がリストではありません。翻訳をスキップします。")
+            logger.error("[警告] 入力がリストではありません。翻訳をスキップします。")
             return []
 
         if not data:
-            print("[情報] 空のリストが渡されました。翻訳をスキップします。")
+            logger.error("[情報] 空のリストが渡されました。翻訳をスキップします。")
             return []
 
         values = []
@@ -34,9 +39,9 @@ class Translator():
                 values.append(result.text)
 
         except deepl.DeepLException as e:
-            print(f"[エラー] DeepL APIでエラーが発生しました: {e}")
+            logger.error(f"[エラー] DeepL APIでエラーが発生しました: {e}")
         except Exception as e:
-            print(f"[エラー] 翻訳処理中に問題が発生しました: {e}")
+            logger.error(f"[エラー] 翻訳処理中に問題が発生しました: {e}")
         
         return values # 翻訳結果のリストを返す。例外が発生した場合は空のリストを返す。
 

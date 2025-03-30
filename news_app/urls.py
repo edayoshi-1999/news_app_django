@@ -12,7 +12,5 @@ urlpatterns = [
     path("add_favorite/", views.AddFavoriteView.as_view(), name="add_favorite"),
     path("update_favorite/<int:pk>/", views.UpdateFavoriteView.as_view(), name="update_favorite"),
     path("delete_favorite/<int:pk>/", views.DeleteFavoriteView.as_view(), name="delete_favorite"),
-
-    # path("favorite_list/None", RedirectView.as_view(url="/favorite_list/", permanent=False)),
-]
+    ]
 
