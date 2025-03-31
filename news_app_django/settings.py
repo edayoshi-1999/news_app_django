@@ -156,18 +156,33 @@ LOGGING = {
         # news_appアプリケーションが利用するロガー
         "news_app": {
             "handlers": ["console"],
-            "level": "DEBUG",
+            # "level": "DEBUG", 開発時はDEBUGにする
+            "level": "INFO",
         },
     },
 
-    # ハンドラの設定
+    # # ハンドラの設定　開発時はコンソールに出力する
+    # "handlers": {
+    #     "console": {
+    #         "level": "DEBUG",
+    #         "class": "logging.StreamHandler",
+    #         "formatter": "dev",
+    #     },
+    # },
+
+    # ハンドラの設定 本番時はファイルに出力する
     "handlers": {
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "dev",
+        "file": {
+            "level": "INFO",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": os.path.join(BASE_DIR, "logs/django.log"),
+            "formatter": "prod",
+            "when": "D", #ログローテーション間隔の単位（D=日）
+            "interval": 1, #ログローテーション間隔　1日単位
+            "backupCount": 7, #保存しておくログファイル数
         },
     },
+
 
     # フォーマッタの設定
     "formatters": {
