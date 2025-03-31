@@ -5,7 +5,8 @@ from news_app.models import Article
 from news_app.views import OnlyYouMixin
 from django.http import Http404
 from unittest.mock import patch
-from news_app.views import ForeignNewsView
+from news_app.views import ForeignNewsView, NikkeiMedView, ZiziMedView
+
 from django.contrib.sessions.middleware import SessionMiddleware
 
 
@@ -57,10 +58,8 @@ class OnlyYouMixinTests(TestCase):
 
 # IndexView のテスト 
 class IndexViewTests(TestCase):
-    def setUp(self):
-        self.client = Client()
 
-    # ログイン不要
+    # ログイン不要なトップページが表示され、正しいテンプレートが使われること
     def test_index_view_status_and_template(self):
         response = self.client.get(reverse("news_app:index"))
         self.assertEqual(response.status_code, 200)
@@ -84,8 +83,7 @@ class ForeignNewsViewTests(TestCase):
     #異常系：ログインしていないとき、ログインページへリダイレクトされるか
     def test_requires_login(self):
         response = self.client.get(reverse('news_app:foreign_news'))
-        self.assertEqual(response.status_code, 302)  # ログインページにリダイレクト
-        self.assertIn("/accounts/login", response.url) # ログインURLが含まれているか
+        self.assertRedirects(response, f'/accounts/login/?next={reverse("news_app:foreign_news")}')
 
 
     #正常系：セッションにデータがなければAPIを呼び、セッションに保存されるか
@@ -178,4 +176,114 @@ class ForeignNewsViewTests(TestCase):
         self.assertEqual(mock_convert.call_args_list[1][0][0], "2025-03-30T13:00:00Z") #2回目の呼び出しは "2025-03-30T13:00:00Z" だったことを確認
         self.assertEqual(mock_convert.call_args_list[2][0][0], "2025-03-30T14:00:00Z")
 
-        
+
+# NikkeiMedView のテスト
+class NikkeiMedViewTests(TestCase):
+    def setUp(self):
+        # get_user_model() でユーザーモデルを取得してユーザー作成
+        self.user = get_user_model().objects.create_user(username='user', password='pass')
+        self.factory = RequestFactory()
+    
+    # 異常系：ログインしていないとき、ログインページへリダイレクトされるか
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse("news_app:nikkei_med"))
+        self.assertRedirects(response, f'/accounts/login/?next={reverse("news_app:nikkei_med")}')
+
+
+    # 正常系1：ページネーションが正しく機能しているか
+    @patch('news_app.views.scraping_NikkeiMed')
+    def test_view_returns_200_with_articles(self, mock_scraping):
+        mock_scraping.return_value = [{'title': f'記事{i}', 'url': f'https://example.com/article{i}'} for i in range(15)]
+
+        request = self.factory.get(reverse('news_app:nikkei_med')) 
+        request.user = self.user
+        response = NikkeiMedView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('page_obj', response.context_data)
+
+        # 10件表示されるページネーションの確認(1ページ目)
+        self.assertEqual(len(response.context_data['page_obj']), 10)
+
+    # 正常系2：ページネーションが正しく機能しているか
+    @patch('news_app.views.scraping_NikkeiMed')
+    def test_view_pagination_second_page(self, mock_scraping):
+        # 15件あるので、2ページ目は5件になるはず
+        mock_scraping.return_value = [{'title': f'記事{i}', 'url': f'https://example.com/article{i}'} for i in range(15)]
+
+        request = self.factory.get(reverse('news_app:nikkei_med') + '?page=2')
+        request.user = self.user
+        response = NikkeiMedView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context_data['page_obj']), 5)
+
+    # 異常系：スクレイピングが失敗した場合(空のリストを返すとき)、ビューがクラッシュしないか
+    @patch("news_app.views.scraping_NikkeiMed")
+    def test_view_handles_scraping_failure(self, mock_scraping):
+        mock_scraping.return_value = []  # 空リストを返すように設定
+
+        request = self.factory.get(reverse("news_app:nikkei_med"))
+        request.user = self.user
+        response = NikkeiMedView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200) # ビューがクラッシュしない
+        self.assertIn("page_obj", response.context_data)
+        self.assertEqual(len(response.context_data["page_obj"]), 0)  # 空の記事リストになってる
+
+
+# ZiziMedView のテスト
+class ZiziMedViewTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="user", password="pass")
+        self.factory = RequestFactory()
+
+    # 異常系：ログインしていないとき、ログインページへリダイレクトされるか
+    def test_redirect_if_not_logged_in(self):
+        response = self.client.get(reverse("news_app:zizi_med"))
+        self.assertRedirects(response, f"/accounts/login/?next={reverse('news_app:zizi_med')}")
+
+    # 正常系1：ページネーションが正しく機能しているか
+    @patch("news_app.views.scraping_ZiziMed")
+    def test_view_returns_200_with_articles(self, mock_scraping):
+        mock_scraping.return_value = [
+            {"title": f"記事{i}", "url": f"https://example.com/article{i}"} for i in range(15)
+        ]
+
+        request = self.factory.get(reverse("news_app:zizi_med"))
+        request.user = self.user
+        response = ZiziMedView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("page_obj", response.context_data)
+        # 記事リストが15件返る → 10件が1ページ目に表示
+        self.assertEqual(len(response.context_data["page_obj"]), 10)
+
+    # 正常系2：ページネーションが正しく機能しているか
+    @patch("news_app.views.scraping_ZiziMed")
+    def test_view_pagination_second_page(self, mock_scraping):
+        mock_scraping.return_value = [
+            {"title": f"記事{i}", "url": f"https://example.com/article{i}"} for i in range(15)
+        ]
+
+        request = self.factory.get(reverse("news_app:zizi_med") + "?page=2")
+        request.user = self.user
+        response = ZiziMedView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        # 15件 → 2ページ目は5件
+        self.assertEqual(len(response.context_data["page_obj"]), 5)
+
+    # 異常系：スクレイピング関数が空リストを返してもビューはクラッシュしない
+    @patch("news_app.views.scraping_ZiziMed")
+    def test_view_handles_scraping_failure(self, mock_scraping):
+        mock_scraping.return_value = []
+
+        request = self.factory.get(reverse("news_app:zizi_med"))
+        request.user = self.user
+        response = ZiziMedView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("page_obj", response.context_data)
+        self.assertEqual(len(response.context_data["page_obj"]), 0)
+
