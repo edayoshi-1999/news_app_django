@@ -68,6 +68,7 @@ class IndexViewTests(TestCase):
 
 # ForeignNewsView のテスト
 class ForeignNewsViewTests(TestCase):
+    # sessionを使うので、RequestFactoryを使ってリクエストを作成する。
     def setUp(self):
         self.factory = RequestFactory()
         self.user = get_user_model().objects.create_user(username='user', password='pass')
@@ -85,6 +86,12 @@ class ForeignNewsViewTests(TestCase):
         response = self.client.get(reverse('news_app:foreign_news'))
         self.assertRedirects(response, f'/accounts/login/?next={reverse("news_app:foreign_news")}')
 
+    # 正常系：ログインしているとき、templateが正しく表示されるか
+    def test_foreign_news_view_renders_template(self):
+        self.client.login(username="user", password="pass")
+        response = self.client.get(reverse("news_app:foreign_news"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "foreign_news.html")  
 
     #正常系：セッションにデータがなければAPIを呼び、セッションに保存されるか
     @patch("news_app.views.fetch_news_from_api")
@@ -182,10 +189,11 @@ class NikkeiMedViewTests(TestCase):
     def setUp(self):
         # get_user_model() でユーザーモデルを取得してユーザー作成
         self.user = get_user_model().objects.create_user(username='user', password='pass')
-        self.factory = RequestFactory()
+        self.client.login(username='user', password='pass')
     
     # 異常系：ログインしていないとき、ログインページへリダイレクトされるか
     def test_redirect_if_not_logged_in(self):
+        self.client.logout()
         response = self.client.get(reverse("news_app:nikkei_med"))
         self.assertRedirects(response, f'/accounts/login/?next={reverse("news_app:nikkei_med")}')
 
@@ -195,9 +203,7 @@ class NikkeiMedViewTests(TestCase):
     def test_view_returns_200_with_articles(self, mock_scraping):
         mock_scraping.return_value = [{'title': f'記事{i}', 'url': f'https://example.com/article{i}'} for i in range(15)]
 
-        request = self.factory.get(reverse('news_app:nikkei_med')) 
-        request.user = self.user
-        response = NikkeiMedView.as_view()(request)
+        response = self.client.get(reverse('news_app:nikkei_med'))
 
         self.assertEqual(response.status_code, 200)
         self.assertIn('page_obj', response.context_data)
@@ -211,9 +217,7 @@ class NikkeiMedViewTests(TestCase):
         # 15件あるので、2ページ目は5件になるはず
         mock_scraping.return_value = [{'title': f'記事{i}', 'url': f'https://example.com/article{i}'} for i in range(15)]
 
-        request = self.factory.get(reverse('news_app:nikkei_med') + '?page=2')
-        request.user = self.user
-        response = NikkeiMedView.as_view()(request)
+        response = self.client.get(reverse('news_app:nikkei_med') + '?page=2')
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context_data['page_obj']), 5)
@@ -223,9 +227,7 @@ class NikkeiMedViewTests(TestCase):
     def test_view_handles_scraping_failure(self, mock_scraping):
         mock_scraping.return_value = []  # 空リストを返すように設定
 
-        request = self.factory.get(reverse("news_app:nikkei_med"))
-        request.user = self.user
-        response = NikkeiMedView.as_view()(request)
+        response = self.client.get(reverse("news_app:nikkei_med"))
 
         self.assertEqual(response.status_code, 200) # ビューがクラッシュしない
         self.assertIn("page_obj", response.context_data)
@@ -236,10 +238,11 @@ class NikkeiMedViewTests(TestCase):
 class ZiziMedViewTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username="user", password="pass")
-        self.factory = RequestFactory()
+        self.client.login(username="user", password="pass") # ログイン
 
     # 異常系：ログインしていないとき、ログインページへリダイレクトされるか
     def test_redirect_if_not_logged_in(self):
+        self.client.logout() # ログアウト
         response = self.client.get(reverse("news_app:zizi_med"))
         self.assertRedirects(response, f"/accounts/login/?next={reverse('news_app:zizi_med')}")
 
@@ -250,14 +253,12 @@ class ZiziMedViewTests(TestCase):
             {"title": f"記事{i}", "url": f"https://example.com/article{i}"} for i in range(15)
         ]
 
-        request = self.factory.get(reverse("news_app:zizi_med"))
-        request.user = self.user
-        response = ZiziMedView.as_view()(request)
+        response = self.client.get(reverse("news_app:zizi_med"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("page_obj", response.context_data)
+        self.assertIn("page_obj", response.context)
         # 記事リストが15件返る → 10件が1ページ目に表示
-        self.assertEqual(len(response.context_data["page_obj"]), 10)
+        self.assertEqual(len(response.context["page_obj"]), 10)
 
     # 正常系2：ページネーションが正しく機能しているか
     @patch("news_app.views.scraping_ZiziMed")
@@ -265,25 +266,71 @@ class ZiziMedViewTests(TestCase):
         mock_scraping.return_value = [
             {"title": f"記事{i}", "url": f"https://example.com/article{i}"} for i in range(15)
         ]
-
-        request = self.factory.get(reverse("news_app:zizi_med") + "?page=2")
-        request.user = self.user
-        response = ZiziMedView.as_view()(request)
+        
+        response = self.client.get(reverse("news_app:zizi_med") + "?page=2")
 
         self.assertEqual(response.status_code, 200)
-        # 15件 → 2ページ目は5件
-        self.assertEqual(len(response.context_data["page_obj"]), 5)
+        self.assertIn("page_obj", response.context)
+        self.assertEqual(len(response.context["page_obj"]), 5) # 15件 → 2ページ目は5件
+
 
     # 異常系：スクレイピング関数が空リストを返してもビューはクラッシュしない
     @patch("news_app.views.scraping_ZiziMed")
     def test_view_handles_scraping_failure(self, mock_scraping):
         mock_scraping.return_value = []
 
-        request = self.factory.get(reverse("news_app:zizi_med"))
-        request.user = self.user
-        response = ZiziMedView.as_view()(request)
+        response = self.client.get(reverse("news_app:zizi_med"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("page_obj", response.context_data)
-        self.assertEqual(len(response.context_data["page_obj"]), 0)
+        self.assertIn("page_obj", response.context)
+        self.assertEqual(len(response.context["page_obj"]), 0)
 
+
+# FavoriteListView のテスト
+
+class FavoriteListViewTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="user", password="pass")
+        self.client.login(username="user", password="pass")
+
+    # 異常系：ログインしていないとき、ログインページへリダイレクトされるか
+    def test_favorite_list_requires_login(self):
+        self.client.logout() # ログアウト
+        response = self.client.get(reverse("news_app:favorite_list"))
+        self.assertRedirects(response, f"/accounts/login/?next={reverse('news_app:favorite_list')}")
+    
+    # 正常系1：お気に入り記事一覧が正しく表示されるか
+    def test_favorite_list_view_shows_user_articles(self):
+        # 自分の投稿記事5件＋他人の記事3件
+        for i in range(5):
+            Article.objects.create(user=self.user, article_title=f"記事{i}", article_url=f"https://example.com/{i}")
+
+        other_user = get_user_model().objects.create_user(username="other", password="pass")
+        for i in range(3):
+            Article.objects.create(user=other_user, article_title=f"他人の記事{i}", article_url=f"https://other.com/{i}")
+
+        response = self.client.get(reverse("news_app:favorite_list"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "favorite_list.html")
+        self.assertIn("page_obj", response.context)
+        page_obj = response.context["page_obj"]
+
+        # 自分の記事だけ表示される
+        self.assertEqual(len(page_obj), 5) # 自分の記事5件  
+        for article in page_obj:
+            self.assertEqual(article.user, self.user) # 自分の記事だけがあるか
+
+    # 正常系2：お気に入り記事一覧が正しくページネーションされるか
+    def test_favorite_list_view_pagination(self):
+        # 6件作ってページネーションを確認（1ページに5件）
+        for i in range(6):
+            Article.objects.create(user=self.user, article_title=f"記事{i}", article_url=f"https://example.com/{i}")
+
+        response = self.client.get(reverse("news_app:favorite_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.context["page_obj"]), 5)  # 1ページ目は5件
+
+        response2 = self.client.get(reverse("news_app:favorite_list") + "?page=2")
+        self.assertEqual(response2.status_code, 200)
+        self.assertEqual(len(response2.context["page_obj"]), 1)  # 2ページ目は1件
