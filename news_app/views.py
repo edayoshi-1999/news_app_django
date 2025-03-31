@@ -13,6 +13,7 @@ import logging
 from django.contrib import messages
 from datetime import datetime, timezone, timedelta
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.views import redirect_to_login
 
 
 logger = logging.getLogger(__name__)
@@ -22,11 +23,28 @@ class OnlyYouMixin(UserPassesTestMixin):
     raise_exception = True # 認証エラー時に403を返す
 
     def test_func(self):
+        # 未ログインの場合は False を返す（→ djangoが自動でhandle_no_permission()を呼び出す。）
+        if not self.request.user.is_authenticated:
+            return False
+        
         # ログインユーザーが記事の所有者かどうかをチェック
-        # self.request.userはログインユーザー
         # URLに含まれるpkを使って、Articleモデルから記事を取得。取得できなかった場合は404エラーを返す。
-        article = get_object_or_404(Article, pk=self.kwargs['pk'])
+        # self.request.userはログインユーザー
+        article = get_object_or_404(Article, pk=self.kwargs["pk"])
         return self.request.user == article.user
+
+    # test_func()でFalseが返された場合に呼ばれる。つまり、以下の2通りの呼ばれ方がある
+    # request.user.is_authenticated が False ⟶ return False
+    # request.user.is_authenticated が True ⟶ return super().handle_no_permission()でFalse
+    # つまり、未ログインの場合はログインページへリダイレクトし、
+    # ログイン済みだが所有者でない場合は403エラーを返す。
+    def handle_no_permission(self):
+        # 未ログインならログインページへリダイレクト
+        if not self.request.user.is_authenticated:
+            return redirect_to_login(self.request.get_full_path())
+
+        # ログイン済みだが所有者でない場合は 403
+        return super().handle_no_permission()
 
 # トップページのビュー
 class IndexView(generic.TemplateView):
